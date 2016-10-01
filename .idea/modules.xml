@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/UnfairBaseServer.iml" filepath="$PROJECT_DIR$/.idea/modules/UnfairBaseServer.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/UnfairBaseServer_main.iml" filepath="$PROJECT_DIR$/.idea/modules/UnfairBaseServer_main.iml" group="UnfairBaseServer" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/UnfairBaseServer_test.iml" filepath="$PROJECT_DIR$/.idea/modules/UnfairBaseServer_test.iml" group="UnfairBaseServer" />
+    </modules>
+  </component>
+</project>

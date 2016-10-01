@@ -1,0 +1,26 @@
+group 'com.unfairtools'
+version '1.0-SNAPSHOT'
+
+apply plugin: 'application'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile 'io.vertx:vertx-core:3.3.2'
+    compile 'io.vertx:vertx-mysql-postgresql-client:3.3.2'
+    compile "org.slf4j:slf4j-log4j12:1.7.14"
+
+    compile 'io.vertx:vertx-auth-common:3.3.3'
+
+
+
+
+    testCompile group: 'junit', name: 'junit', version: '4.11'
+}
+
+
+mainClassName = "com.unfairtools.InitServer"
