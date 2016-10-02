@@ -11,8 +11,6 @@ public class PongGame {
 
     public String user1 = "player1";
     public String user2 = "player2";
-    public String pass1 = "";
-    public String pass2 = "";
 
     public DatagramSocket s1;
     public DatagramSocket s2;
@@ -21,7 +19,6 @@ public class PongGame {
     public int s1Port;
     public String s2Host;
     public int s2Port;
-
 
     volatile String id;
 
@@ -37,11 +34,9 @@ public class PongGame {
     public volatile float paddle1 = .8f;
     public volatile float paddle2 = .92f;
 
-    public long gameTime;
 
     public volatile String winner = null;
 
-    public volatile boolean running = true;
 
     public volatile boolean started = false;
 
@@ -78,8 +73,8 @@ public class PongGame {
                 int step = 0;
                 started = true;
                 while (winner == null) {
-                    step++;
-                    //System.out.println("Game running");
+                    //System.out.println("Game running...");
+                    //step++;
                     try {
                         Thread.sleep(50);
                         if(s1!=null && s2!= null){
@@ -104,6 +99,8 @@ public class PongGame {
                             });
 
 
+                        }else{
+                            continue;
                         }
                     } catch (Exception e) {
                     }
@@ -156,7 +153,7 @@ public class PongGame {
                 System.out.println("Paddle1: " + paddle1);
                 System.out.println("Paddle2: " + paddle2);
                 System.out.println("Ball pos x,y: " + ballPosX + "," + ballPosY);
-
+                AccountVerticle.gameHashMap.remove(id + "");
             }
         }).start();
 

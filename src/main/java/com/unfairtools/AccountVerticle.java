@@ -4,11 +4,7 @@ package com.unfairtools; /**
 
 
 import io.netty.handler.codec.http.HttpContentEncoder;
-import io.vertx.core.AbstractVerticle;
-
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
+import io.vertx.core.*;
 
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.Json;
@@ -35,7 +31,7 @@ public class AccountVerticle extends AbstractVerticle {
     public static String LOGIN_TABLE_NAME = "LOGIN_TABLE";
     public static String INVITES_TABLE_NAME = "INVITES_TABLE";
 
-    public static ConcurrentHashMap<String, PongGame> gameHashMap = new ConcurrentHashMap<String, PongGame>();
+    public static volatile ConcurrentHashMap<String, PongGame> gameHashMap = new ConcurrentHashMap<String, PongGame>();
 
 
     public static void killInvites(io.vertx.core.Vertx vertx, String gameId, Future future){
@@ -103,7 +99,6 @@ public class AccountVerticle extends AbstractVerticle {
 
                                 //to user
                                 map.get(map.size()-1).add(res2.result().getResults().get(i).getString(0));
-
 
                                 //match = true or false.
                                 map.get(map.size()-1).add(res2.result().getResults().get(i).getString(3));
@@ -210,6 +205,7 @@ public class AccountVerticle extends AbstractVerticle {
                 SQLConnection connection = res.result();
 
                 try {
+                    
                     connection.query("SELECT COUNT(*) from " + LOGIN_TABLE_NAME + " WHERE username = '" + name
                             + "';", res2 -> {
                         if (res2.succeeded()) {
@@ -349,7 +345,7 @@ public class AccountVerticle extends AbstractVerticle {
 
 
                         String incomingStr = buffer.getString(0,buffer.length());
-                        System.out.println("Incoming: " + incomingStr);
+                        //System.out.println("Incoming: " + incomingStr);
 
                         //try{
                             InfoObject incoming = Json.decodeValue(incomingStr,InfoObject.class);
@@ -459,6 +455,11 @@ public class AccountVerticle extends AbstractVerticle {
                                     });
                                     break;
                                 case "JOIN_GAME":
+                                    vertx.executeBlocking(future -> {
+                                        createGameIfNotExists(vertx, future, incoming.vals[2]);
+                                    },res ->{
+
+                                    });
                                     break;
                                 case "SEND_GAME_INFO":
                                     //vertx.executeBlocking(future -> {
@@ -484,6 +485,16 @@ public class AccountVerticle extends AbstractVerticle {
             }
         });
         server.listen(InitServer.TCPPort);
+    }
+
+
+    public static void createGameIfNotExists(Vertx vertx, Future future, String gameNumber){
+        System.out.println("Create? game " + gameNumber + " requested...");
+        if(!gameHashMap.containsKey(gameNumber)) {
+            System.out.println(gameNumber + " didn't exist, creating...");
+            gameHashMap.put(gameNumber, new PongGame(gameNumber));
+        }
+        future.complete();
     }
 }
 

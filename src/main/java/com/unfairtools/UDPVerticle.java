@@ -16,17 +16,16 @@ public class UDPVerticle extends AbstractVerticle {
     public void setGameInfo(InfoObject incoming, Future future, DatagramSocket sock, DatagramPacket packet){
         if(!AccountVerticle.gameHashMap.containsKey(incoming.vals[1])) {
             future.fail("Game not found");
-            System.out.println("Sending halt");
+            //System.out.println("Sending halt");
             sock.send(Buffer.buffer("halt".getBytes()), packet.sender().port(), packet.sender().host(), asyncResult2 -> {
             });
         }else {
-
             //user, GameNumber, FirstOrSecondPlayer, canvas.getPaddleY() + ""};
 
             PongGame g = AccountVerticle.gameHashMap.get(incoming.vals[1]);
 
             if(g.winner!=null) {
-            System.out.println("Sending halt");
+            //System.out.println("Sending halt");
                 sock.send(Buffer.buffer("halt".getBytes()), packet.sender().port(), packet.sender().host(), asyncResult2 -> {
                 });
             }
@@ -34,10 +33,13 @@ public class UDPVerticle extends AbstractVerticle {
         if(incoming.vals[2].equals("1")) {
 
             if (g.s1 == null) {
+                System.out.println("Starting game");
                 System.out.println("Player 1 has joined the game");
                 g.s1 = sock;
                 g.s1Host = packet.sender().host();
                 g.s1Port = packet.sender().port();
+                if(g.s2 != null)
+                    g.run();
             }
         }else {
             if (g.s2 == null) {
@@ -45,6 +47,8 @@ public class UDPVerticle extends AbstractVerticle {
                 g.s2 = sock;
                 g.s2Host =  packet.sender().host();
                 g.s2Port =  packet.sender().port();
+                if(g.s1!=null)
+                    g.run();
             }
         }
             g.updatePaddle(Integer.parseInt(incoming.vals[2]), Float.parseFloat(incoming.vals[3]));
@@ -67,6 +71,7 @@ public class UDPVerticle extends AbstractVerticle {
                     try {
                         InfoObject incoming = Json.decodeValue(incomingStr, InfoObject.class);
                         //System.out.println("Action was " + incoming.action);
+
                         switch (incoming.action) {
                             case "INIT_SOCKETS_GAME":
                                 if(incoming.vals[1].equals("1"))
