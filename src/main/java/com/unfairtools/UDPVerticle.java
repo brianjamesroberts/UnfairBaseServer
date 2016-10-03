@@ -2,23 +2,62 @@ package com.unfairtools;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
+import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.datagram.DatagramPacket;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.json.Json;
+import io.vertx.core.json.JsonObject;
+import io.vertx.ext.asyncsql.AsyncSQLClient;
+import io.vertx.ext.asyncsql.PostgreSQLClient;
+import io.vertx.ext.sql.SQLConnection;
 
 /**
  * Created by brianroberts on 9/23/16.
  */
 public class UDPVerticle extends AbstractVerticle {
 
-    public void setGameInfo(InfoObject incoming, Future future, DatagramSocket sock, DatagramPacket packet){
+
+    public static void deleteInvite(Vertx vertx, String gameID){
+        System.out.println("Deleting invite for " + gameID);
+
+        JsonObject postgreSQLClientConfig = new JsonObject()
+                .put("database", "pongonline")
+                .put("username", InitServer.dbOwner)
+                .put("password", InitServer.dbPassword);
+        AsyncSQLClient postgreSQLClient = PostgreSQLClient.createShared(vertx, postgreSQLClientConfig);
+        postgreSQLClient.getConnection(res -> {
+
+            if (res.succeeded()) {
+                SQLConnection connection = res.result();
+                try {
+                    connection.query("DELETE from "+AccountVerticle.INVITES_TABLE_NAME+" WHERE gameid = '"+gameID+"';", res2 -> {
+                        if (res2.succeeded()) {
+                            System.out.println("Game deleted!!! (" + gameID + ")");
+                        } else {
+                            System.out.println("Failed to delete game! (" + gameID + ")");
+                            System.out.println(res2.cause().toString());
+                        }
+                    });
+                }catch (Exception e){
+                    e.printStackTrace();
+                }finally{
+                    connection.close();
+                }
+            }else{
+                System.out.println("Failed to get database connection " + res.cause().toString());
+            }
+        });
+    }
+
+    public void setGameInfo(Vertx vertx, InfoObject incoming, Future future, DatagramSocket sock, DatagramPacket packet){
         if(!AccountVerticle.gameHashMap.containsKey(incoming.vals[1])) {
-            future.fail("Game not found");
             //System.out.println("Sending halt");
             sock.send(Buffer.buffer("halt".getBytes()), packet.sender().port(), packet.sender().host(), asyncResult2 -> {
             });
+            deleteInvite(vertx,incoming.vals[1]);
+            future.fail("Game not found1");
         }else {
             //user, GameNumber, FirstOrSecondPlayer, canvas.getPaddleY() + ""};
 
@@ -28,6 +67,9 @@ public class UDPVerticle extends AbstractVerticle {
             //System.out.println("Sending halt");
                 sock.send(Buffer.buffer("halt".getBytes()), packet.sender().port(), packet.sender().host(), asyncResult2 -> {
                 });
+                AccountVerticle.gameHashMap.remove(incoming.vals[1]);
+                deleteInvite(vertx,incoming.vals[1]);
+                future.fail("game not found2");
             }
 
         if(incoming.vals[2].equals("1")) {
@@ -84,7 +126,7 @@ public class UDPVerticle extends AbstractVerticle {
                             case "SEND_GAME_INFO":
                                 //System.out.println("Setting game info(" + incomingStr + ")" );
                                 vertx.executeBlocking(future -> {
-                                    setGameInfo(incoming,future, socket, packet);
+                                    setGameInfo(vertx, incoming,future, socket, packet);
                                 }, res ->{
                                     if(!res.succeeded())
                                         System.out.println(res.cause().getMessage());
