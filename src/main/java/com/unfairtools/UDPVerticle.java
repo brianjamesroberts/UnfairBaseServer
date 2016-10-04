@@ -78,9 +78,6 @@ public class UDPVerticle extends AbstractVerticle {
                     inf.vals = new String[]{"true"};
                 else
                     inf.vals = new String[]{"false"};
-
-
-
                 sock.send(Buffer.buffer(Json.encode(inf).getBytes()), packet.sender().port(), packet.sender().host(), asyncResult2 -> {
                 });
                 deleteInvite(vertx,incoming.vals[1]);
@@ -91,13 +88,14 @@ public class UDPVerticle extends AbstractVerticle {
         if(incoming.vals[2].equals("1")) {
 
             if (g.s1 == null) {
-                System.out.println("Starting game");
                 System.out.println("Player 1 has joined the game");
                 g.s1 = sock;
                 g.s1Host = packet.sender().host();
                 g.s1Port = packet.sender().port();
-                if(g.s2 != null)
+                if(g.s2 != null) {
+                    System.out.println("Starting game");
                     g.run();
+                }
             }
         }else {
             if (g.s2 == null) {
@@ -105,8 +103,10 @@ public class UDPVerticle extends AbstractVerticle {
                 g.s2 = sock;
                 g.s2Host =  packet.sender().host();
                 g.s2Port =  packet.sender().port();
-                if(g.s1!=null)
+                if(g.s1!=null) {
                     g.run();
+                    System.out.println("Starting game");
+                }
             }
         }
             g.updatePaddle(Integer.parseInt(incoming.vals[2]), Float.parseFloat(incoming.vals[3]));
@@ -131,13 +131,6 @@ public class UDPVerticle extends AbstractVerticle {
                         //System.out.println("Action was " + incoming.action);
 
                         switch (incoming.action) {
-                            case "INIT_SOCKETS_GAME":
-                                if(incoming.vals[1].equals("1"))
-                                    AccountVerticle.gameHashMap.get(incoming.vals[0]).s1 = socket;
-                                else
-                                    AccountVerticle.gameHashMap.get(incoming.vals[0]).s2 = socket;
-                                break;
-
                             //receive info from client
                             case "SEND_GAME_INFO":
                                 //System.out.println("Setting game info(" + incomingStr + ")" );

@@ -45,6 +45,9 @@ public class PongGame {
     }
 
     private RemoveRunnable  removeRunnable = null;
+
+
+
     public void updatePaddle(int playerNumber, float position){
         if(playerNumber==1)
             paddle1 = position;
@@ -52,23 +55,6 @@ public class PongGame {
             paddle2 = position;
     }
 
-    class RemoveRunnable implements Runnable{
-        String id;
-        public RemoveRunnable(String idd){
-            id = idd;
-        }
-        private RemoveRunnable(){
-
-        }
-        public void run(){
-            try{
-                Thread.sleep(1500);
-                AccountVerticle.gameHashMap.remove(id);
-            }catch(Exception e){
-                e.printStackTrace();
-            }
-        }
-    }
 
 
     public InfoObject getGameInfo(int playerNum){
@@ -179,6 +165,27 @@ public class PongGame {
 
 
 
+    }
+
+
+
+    class RemoveRunnable implements Runnable{
+        String id;
+        public RemoveRunnable(String idd){
+            id = idd;
+        }
+        private RemoveRunnable(){
+        }
+        public void run(){
+            try{
+                Thread.sleep(1500);
+                //note, DO NOT CLOSE UDP SOCKETS s1 and s2!!!
+                AccountVerticle.gameHashMap.remove(id);
+                System.out.println("Game " + id + "removed.");
+            }catch(Exception e){
+                e.printStackTrace();
+            }
+        }
     }
 
 

@@ -10,18 +10,15 @@ import io.vertx.core.Vertx;
 public class InitServer {
 
 
-    //dear hackers, these are only for my postgress, and will not work for ssh.
+    //dear hackers, these are only for my postgres, and will not work for ssh.
     public static String dbOwner = "brianroberts";
     public static String dbPassword = "password1";
-
     public static String ServerIP = "158.69.207.153";
     public static int UDPPort = 8086;
     public static int TCPPort = 8079;
 
 
     public InitServer(){
-
-
 
         Vertx vertx;
         vertx = Vertx.vertx();

@@ -3,7 +3,6 @@ package com.unfairtools; /**
  */
 
 
-import io.netty.handler.codec.http.HttpContentEncoder;
 import io.vertx.core.*;
 
 import io.vertx.core.buffer.Buffer;
@@ -16,9 +15,7 @@ import io.vertx.ext.asyncsql.AsyncSQLClient;
 import io.vertx.ext.asyncsql.PostgreSQLClient;
 import io.vertx.ext.sql.SQLConnection;
 
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 
@@ -34,7 +31,7 @@ public class AccountVerticle extends AbstractVerticle {
     public static volatile ConcurrentHashMap<String, PongGame> gameHashMap = new ConcurrentHashMap<String, PongGame>();
 
 
-    public static void killInvites(io.vertx.core.Vertx vertx, String gameId, Future future){
+    public static void killInvites(io.vertx.core.Vertx vertx, String gameIdz, Future future){
         JsonObject postgreSQLClientConfig = new JsonObject()
                 .put("database", "pongonline")
                 .put("username", InitServer.dbOwner)
@@ -45,8 +42,8 @@ public class AccountVerticle extends AbstractVerticle {
             if (res.succeeded()) {
                 SQLConnection connection = res.result();
                 try {
-                    System.out.println("Attempting to delete gameid " + gameId + " invites...");
-                    connection.query("DELETE FROM " +INVITES_TABLE_NAME +" WHERE gameid = '"+ gameId+"';", res2-> {
+                    System.out.println("Attempting to delete gameid " + gameIdz + " invites...");
+                    connection.query("DELETE FROM " +INVITES_TABLE_NAME +" WHERE gameid = '"+ gameIdz+"';", res2-> {
                        if(res.succeeded()){
                            future.succeeded();
                        }else{
@@ -221,9 +218,9 @@ public class AccountVerticle extends AbstractVerticle {
                                                 res3 -> {
                                                     if(res3.succeeded()){
                                                         System.out.println("Inserted new invite request for " + name + ", " + id);
-                                                        PongGame game = new PongGame(id);
+                                                        //PongGame game = new PongGame(id);
                                                         //game.run();
-                                                        gameHashMap.put(id,game);
+                                                        //gameHashMap.put(id,game);
                                                         future.complete();
                                                     }else{
                                                         System.out.println(res3.cause().getMessage());
@@ -255,38 +252,6 @@ public class AccountVerticle extends AbstractVerticle {
             }
         });
     }
-
-
-    public void returnGameInfo(InfoObject incoming, NetSocket netSocket,Future future){
-
-
-        if(!gameHashMap.containsKey(incoming.vals[1])) {
-            InfoObject inf = new InfoObject();
-
-            inf.intVals= new int[]{-1};
-
-            inf.action = "GAME_INFO";
-            inf.vals = new String[]{"1", 1+ "", 1+ "ERROR", 1 + ""};
-            netSocket.write(Json.encode(inf) + "\n");
-
-        }else {
-
-            new Thread(new Runnable() {
-                PongGame g = gameHashMap.get(incoming.vals[1]);
-
-
-                public void run() {
-
-                    //System.out.println("PongGame g is " + g.toString());
-                    //player #, float position 0 -> 1
-                    g.updatePaddle(Integer.parseInt(incoming.vals[2]), Float.parseFloat(incoming.vals[3]));
-                    //netSocket.write(Json.encode(g.getGameInfo(incoming)) + "\n");
-
-            }
-        });
-    }
-    }
-
 
     public static void createNewAccount(Vertx vertx, Future future, String user, String pass){
         JsonObject postgreSQLClientConfig = new JsonObject()
@@ -397,10 +362,6 @@ public class AccountVerticle extends AbstractVerticle {
                                             }
                                     });
                                     break;
-                                case "START_GAME":
-                                    System.out.println("Recieved START_GAME from player 2 for game");
-                                    gameHashMap.get(incoming.vals[0]).run();
-                                    break;
                                 case "LOGIN":
                                     vertx.executeBlocking(future -> {
                                         // Call some blocking API that takes a significant amount of time to return
@@ -425,21 +386,6 @@ public class AccountVerticle extends AbstractVerticle {
                                         }
                                     });
                                     break;
-                                case "KILL_INVITE":
-
-                                    //get game id from (0)
-                                    String gameId = incoming.vals[0];
-                                    vertx.executeBlocking(future -> {
-                                                killInvites(vertx, gameId, future);
-                                            }
-                                    ,res ->{
-                                            if(res.succeeded()){
-                                                System.out.println("Killed invite " + incoming.vals[0]);
-                                            }else{
-                                              System.out.println(res.cause().getMessage());
-                                            }
-                                        });
-                                    break;
                                 case "INVITES?":
                                     String requestedUser = incoming.vals[0];
                                     //System.out.println("Checking for invites for " + requestedUser);
@@ -452,34 +398,25 @@ public class AccountVerticle extends AbstractVerticle {
                                             inf3.maps = (String[][])res.result();
                                             netSocket.write(Json.encode(inf3) + "\n");
                                         }else{
-//                                            InfoObject inf3 = new InfoObject();
-//                                            inf3.action = "SNACKBAR";
-//                                            //res.cause().getMessage().toString()
-//                                            inf3.vals=new String[]{};
-                                            //netSocket.write(Json.encode(inf3) + "\n");
                                         }
                                     });
                                     break;
-                                case "NEW_GAME":
+                                case "INVITE_USER":
                                     //thread safe
                                     int id = gameID++;
-                                    InfoObject inf = new InfoObject();
-                                    inf.action="DISPLAY_GAME";
-                                    inf.intVals=new int[]{id};
                                     String invitedUser = incoming.vals[0];
                                     String invitingUser = incoming.vals[1];
                                     vertx.executeBlocking(future -> {
-                                        InviteUser(vertx, incoming.vals[0], id+"", future,invitingUser);
+                                        InviteUser(vertx, invitedUser, id+"", future,invitingUser);
                                     }, res -> {
                                         if (res.succeeded()) {
-                                            InfoObject inf2 = new InfoObject();
-                                            inf2.action = "JOIN_GAME";
-                                            //send game id, and which player u are
-                                            inf2.vals = new String[]{id+"","1",invitedUser,invitingUser};
-                                            netSocket.write(Json.encode(inf2) + "\n");
-
-
+                                            InfoObject inf = new InfoObject();
+                                            inf.action="SNACKBAR";
+                                            inf.vals = new String[]{"Invite sent!"};
+                                            netSocket.write(Json.encode(inf) + "\n");
                                         } else {
+                                            InfoObject inf = new InfoObject();
+                                            inf.intVals=new int[]{id};
                                             inf.action="SNACKBAR";
                                             inf.vals = new String[]{res.cause().getMessage()};
                                             netSocket.write(Json.encode(inf) + "\n");
@@ -494,26 +431,16 @@ public class AccountVerticle extends AbstractVerticle {
                                     String gameNum = incoming.vals[0];
                                     vertx.executeBlocking(future -> {
                                         ValidateGame(vertx,gameNum,future);
+                                        createGameIfNotExists(vertx, future, gameNum);
                                     },res->{
-
+                                        if(res.succeeded())
+                                            System.out.println("Succeded in VALIDATE_GAME_INVITE");
+                                        else
+                                            System.out.println(res.cause().toString());
                                     });
-                                    break;
-                                case "JOIN_GAME":
-                                    vertx.executeBlocking(future -> {
-                                        createGameIfNotExists(vertx, future, incoming.vals[2]);
-                                    },res ->{
-
-                                    });
-                                    break;
-                                case "SEND_GAME_INFO":
-                                    //vertx.executeBlocking(future -> {
-                                            //returnGameInfo(incoming, netSocket,future);
-                                    //}, res ->{
-
-                                    //});
-
                                     break;
                                 case "ping":
+                                    //not currently implemented.
                                     System.out.println("Ping recieved");
                                     InfoObject ret = new InfoObject();
                                     ret.action="ping";
@@ -521,7 +448,6 @@ public class AccountVerticle extends AbstractVerticle {
                                 default:
                                     break;
                             }
-                        //}catch(Exception e){};
                     }
                 });
 
@@ -548,5 +474,4 @@ class InfoObject{
     public String appName;
     public int[] intVals;
     public String[][] maps;
-
 }
