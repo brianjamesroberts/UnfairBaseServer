@@ -288,6 +288,35 @@ public class AccountVerticle extends AbstractVerticle {
     }
 
 
+    public static void createNewAccount(Vertx vertx, Future future, String user, String pass){
+        JsonObject postgreSQLClientConfig = new JsonObject()
+                .put("database", "pongonline")
+                .put("username", InitServer.dbOwner)
+                .put("password", InitServer.dbPassword);
+        AsyncSQLClient postgreSQLClient = PostgreSQLClient.createShared(vertx, postgreSQLClientConfig);
+        postgreSQLClient.getConnection(res -> {
+
+            if (res.succeeded()) {
+                SQLConnection connection = res.result();
+
+                try {
+                    connection.query("INSERT INTO " + LOGIN_TABLE_NAME + " (username, password) VALUES ('" + user + "', '" + pass + "');", res2 -> {
+                        if (res2.succeeded()) {
+                            future.complete("Account created");
+                        } else {
+                            future.fail(res2.cause().toString());
+                        }
+                    });
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    connection.close();
+                }
+            }
+        });
+    }
+
+
     public static void Login(io.vertx.core.Vertx vertx, String user, String pass, String appName, Future future){
 
         JsonObject postgreSQLClientConfig = new JsonObject()
@@ -351,6 +380,23 @@ public class AccountVerticle extends AbstractVerticle {
                             InfoObject incoming = Json.decodeValue(incomingStr,InfoObject.class);
                             //System.out.println("Action was " + incoming.action);
                             switch(incoming.action){
+                                case "NEW_ACCOUNT":
+                                    vertx.executeBlocking(future -> {
+                                        createNewAccount(vertx,future,incoming.vals[0],incoming.vals[1]);
+                                    }, res ->{
+                                            if(res.succeeded()){
+                                                InfoObject inf = new InfoObject();
+                                                inf.action="SNACKBAR";
+                                                inf.vals = new String[]{"Account created! :)"};
+                                                netSocket.write(Json.encode(inf) + "\n");
+                                            }else{
+                                                InfoObject inf = new InfoObject();
+                                                inf.action="SNACKBAR";
+                                                inf.vals = new String[]{"Failed, username taken :("};
+                                                netSocket.write(Json.encode(inf) + "\n");
+                                            }
+                                    });
+                                    break;
                                 case "START_GAME":
                                     System.out.println("Recieved START_GAME from player 2 for game");
                                     gameHashMap.get(incoming.vals[0]).run();
@@ -393,8 +439,6 @@ public class AccountVerticle extends AbstractVerticle {
                                               System.out.println(res.cause().getMessage());
                                             }
                                         });
-                                    break;
-                                case "NEW_ACCOUNT":
                                     break;
                                 case "INVITES?":
                                     String requestedUser = incoming.vals[0];

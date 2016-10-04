@@ -9,8 +9,8 @@ import io.vertx.core.json.Json;
  */
 public class PongGame {
 
-    public String user1 = "player1";
-    public String user2 = "player2";
+    public String user1 = "1";
+    public String user2 = "2";
 
     public DatagramSocket s1;
     public DatagramSocket s2;
@@ -44,11 +44,30 @@ public class PongGame {
         id = idd;
     }
 
+    private RemoveRunnable  removeRunnable = null;
     public void updatePaddle(int playerNumber, float position){
         if(playerNumber==1)
             paddle1 = position;
         else
             paddle2 = position;
+    }
+
+    class RemoveRunnable implements Runnable{
+        String id;
+        public RemoveRunnable(String idd){
+            id = idd;
+        }
+        private RemoveRunnable(){
+
+        }
+        public void run(){
+            try{
+                Thread.sleep(1500);
+                AccountVerticle.gameHashMap.remove(id);
+            }catch(Exception e){
+                e.printStackTrace();
+            }
+        }
     }
 
 
@@ -109,11 +128,11 @@ public class PongGame {
 
                     //System.out.println("BALL POS:" + ballPosX + ", " + ballPosY);
 
-                    if (ballXV < 0 && ballPosX < 0)
+                    if (ballXV < 0 && ballPosX < -.05)
                         winner = user2;
 
 
-                    if (ballXV > 0 && ballPosX > 1)
+                    if (ballXV > 0 && ballPosX > 1.05)
                         winner = user1;
 
                     if (ballXV < 0 && ballPosX < .05 && Math.abs(ballPosY - paddle1) < paddleHeight) {
@@ -124,7 +143,6 @@ public class PongGame {
                         System.out.println("REBOUND OFF PADDLE 1");
                         ballXV = ballXV * 1.07f;
                     }
-
                     if (ballXV > 0 && ballPosX > .95 && Math.abs(ballPosY - paddle2) < paddleHeight) {
                         ballXV = -ballXV;
                         System.out.println("REBOUND OFF PADDLE 2");
@@ -153,7 +171,9 @@ public class PongGame {
                 System.out.println("Paddle1: " + paddle1);
                 System.out.println("Paddle2: " + paddle2);
                 System.out.println("Ball pos x,y: " + ballPosX + "," + ballPosY);
-                AccountVerticle.gameHashMap.remove(id + "");
+                removeRunnable = new RemoveRunnable(id);
+                new Thread(removeRunnable).start();
+                //AccountVerticle.gameHashMap.remove(id + "");
             }
         }).start();
 

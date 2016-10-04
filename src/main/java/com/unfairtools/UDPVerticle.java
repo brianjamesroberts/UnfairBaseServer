@@ -34,9 +34,9 @@ public class UDPVerticle extends AbstractVerticle {
                 try {
                     connection.query("DELETE from "+AccountVerticle.INVITES_TABLE_NAME+" WHERE gameid = '"+gameID+"';", res2 -> {
                         if (res2.succeeded()) {
-                            System.out.println("Game deleted!!! (" + gameID + ")");
+                            System.out.println("invite deleted deleted!!! (" + gameID + ")");
                         } else {
-                            System.out.println("Failed to delete game! (" + gameID + ")");
+                            System.out.println("Failed to delete invite! (" + gameID + ")");
                             System.out.println(res2.cause().toString());
                         }
                     });
@@ -54,10 +54,15 @@ public class UDPVerticle extends AbstractVerticle {
     public void setGameInfo(Vertx vertx, InfoObject incoming, Future future, DatagramSocket sock, DatagramPacket packet){
         if(!AccountVerticle.gameHashMap.containsKey(incoming.vals[1])) {
             //System.out.println("Sending halt");
+
+            InfoObject inf = new InfoObject();
+            inf.action = "halt";
+
             sock.send(Buffer.buffer("halt".getBytes()), packet.sender().port(), packet.sender().host(), asyncResult2 -> {
             });
             deleteInvite(vertx,incoming.vals[1]);
             future.fail("Game not found1");
+            return;
         }else {
             //user, GameNumber, FirstOrSecondPlayer, canvas.getPaddleY() + ""};
 
@@ -65,11 +70,22 @@ public class UDPVerticle extends AbstractVerticle {
 
             if(g.winner!=null) {
             //System.out.println("Sending halt");
-                sock.send(Buffer.buffer("halt".getBytes()), packet.sender().port(), packet.sender().host(), asyncResult2 -> {
+
+                InfoObject inf = new InfoObject();
+                inf.action = "halt";
+
+                if(incoming.vals[2].equals(g.winner))
+                    inf.vals = new String[]{"true"};
+                else
+                    inf.vals = new String[]{"false"};
+
+
+
+                sock.send(Buffer.buffer(Json.encode(inf).getBytes()), packet.sender().port(), packet.sender().host(), asyncResult2 -> {
                 });
-                AccountVerticle.gameHashMap.remove(incoming.vals[1]);
                 deleteInvite(vertx,incoming.vals[1]);
                 future.fail("game not found2");
+                return;
             }
 
         if(incoming.vals[2].equals("1")) {
@@ -128,8 +144,8 @@ public class UDPVerticle extends AbstractVerticle {
                                 vertx.executeBlocking(future -> {
                                     setGameInfo(vertx, incoming,future, socket, packet);
                                 }, res ->{
-                                    if(!res.succeeded())
-                                        System.out.println(res.cause().getMessage());
+                                    //if(!res.succeeded())
+                                        //System.out.println(res.cause().getMessage());
                                 });
                                 break;
                             default:
