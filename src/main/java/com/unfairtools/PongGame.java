@@ -76,7 +76,7 @@ public class PongGame {
     public void run(){
         new Thread(new Runnable() {
             public void run() {
-                ballXV = .01f;
+                ballXV = .013f;
                 ballYV = .008f;
                 float time = 0;
                 int step = 0;
@@ -116,18 +116,31 @@ public class PongGame {
                     ballPosX += ballXV * 1;
                     ballPosY += ballYV * 1;
 
+
                     //System.out.println("BALL POS:" + ballPosX + ", " + ballPosY);
 
-                    if (ballXV < 0 && ballPosX < -.05)
-                        winner = user2;
+                    if (ballXV < 0 && ballPosX < -.05) {
+                        if (Math.abs(ballPosY - paddle1) < paddleHeight) {
+                            //ballPosX = -.05f;
+                            ballXV = -ballXV;
+                        } else {
+                            winner = user2;
+                        }
+                    }
 
 
-                    if (ballXV > 0 && ballPosX > 1.05)
-                        winner = user1;
+                    if (ballXV > 0 && ballPosX > 1.05) {
+                        if(Math.abs(ballPosY-paddle2) < paddleHeight){
+                            //ballPosX = 1.05f;
+                            ballXV = -ballXV;
+                        }else {
+                            winner = user1;
+                        }
+                    }
 
                     if (ballXV < 0 && ballPosX < .05 && Math.abs(ballPosY - paddle1) < paddleHeight) {
                         ballXV = -ballXV;
-                        float factor =  (ballPosY - paddle1)/30;
+                        float factor =  (ballPosY - paddle1)/20;
                         ballYV += factor;
 
                         System.out.println("REBOUND OFF PADDLE 1");
@@ -136,7 +149,7 @@ public class PongGame {
                     if (ballXV > 0 && ballPosX > .95 && Math.abs(ballPosY - paddle2) < paddleHeight) {
                         ballXV = -ballXV;
                         System.out.println("REBOUND OFF PADDLE 2");
-                        float factor =  (ballPosY - paddle2)/30;
+                        float factor =  (ballPosY - paddle2)/20;
                         ballYV += factor;
                         ballXV = ballXV * 1.07f;
                     }
