@@ -1,5 +1,6 @@
 package com.unfairtools;
 
+import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.json.Json;
@@ -40,8 +41,11 @@ public class PongGame {
 
     public volatile boolean started = false;
 
-    public PongGame(String idd){
+    private Vertx vertx;
+
+    public PongGame(Vertx vertx1, String idd){
         id = idd;
+        vertx = vertx1;
     }
 
     private RemoveRunnable  removeRunnable = null;
@@ -178,6 +182,16 @@ public class PongGame {
         }
         public void run(){
             try{
+                vertx.executeBlocking(future -> {
+                    UDPVerticle.deleteInvite(vertx,id);
+                }, res -> {
+                    if(res.succeeded()){
+                        System.out.println("Deleted " + id + " game from PongGame class.");
+                    }else{
+                        System.out.println("FAILED to delete " + id + " game from PongGame class.");
+                    }
+
+                });
                 Thread.sleep(1500);
                 //note, DO NOT CLOSE UDP SOCKETS s1 and s2!!!
                 AccountVerticle.gameHashMap.remove(id);

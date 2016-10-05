@@ -218,9 +218,6 @@ public class AccountVerticle extends AbstractVerticle {
                                                 res3 -> {
                                                     if(res3.succeeded()){
                                                         System.out.println("Inserted new invite request for " + name + ", " + id);
-                                                        //PongGame game = new PongGame(id);
-                                                        //game.run();
-                                                        //gameHashMap.put(id,game);
                                                         future.complete();
                                                     }else{
                                                         System.out.println(res3.cause().getMessage());
@@ -346,47 +343,66 @@ public class AccountVerticle extends AbstractVerticle {
                             //System.out.println("Action was " + incoming.action);
                             switch(incoming.action){
                                 case "NEW_ACCOUNT":
-                                    vertx.executeBlocking(future -> {
-                                        createNewAccount(vertx,future,incoming.vals[0],incoming.vals[1]);
-                                    }, res ->{
-                                            if(res.succeeded()){
+                                    if(!incoming.vals[0].matches("^[a-zA-Z0-9]*$")||!incoming.vals[1].matches("^[a-zA-Z0-9]*$")){
+                                        InfoObject inf = new InfoObject();
+                                        inf.action = "SNACKBAR";
+                                        inf.vals = new String[]{"Must use 1-9 a-z"};
+                                        netSocket.write(Json.encode(inf) + "\n");
+                                    }else {
+
+
+                                        vertx.executeBlocking(future -> {
+                                            createNewAccount(vertx, future, incoming.vals[0], incoming.vals[1]);
+                                        }, res -> {
+                                            if (res.succeeded()) {
                                                 InfoObject inf = new InfoObject();
-                                                inf.action="SNACKBAR";
+                                                inf.action = "SNACKBAR";
                                                 inf.vals = new String[]{"Account created! :)"};
                                                 netSocket.write(Json.encode(inf) + "\n");
-                                            }else{
+                                            } else {
                                                 InfoObject inf = new InfoObject();
-                                                inf.action="SNACKBAR";
+                                                inf.action = "SNACKBAR";
                                                 inf.vals = new String[]{"Failed, username taken :("};
                                                 netSocket.write(Json.encode(inf) + "\n");
                                             }
-                                    });
+                                        });
+                                    }
                                     break;
                                 case "LOGIN":
-                                    vertx.executeBlocking(future -> {
-                                        // Call some blocking API that takes a significant amount of time to return
-                                        Login(vertx, incoming.vals[0],incoming.vals[1], incoming.appName, future);
-                                        //future.complete("BLAH");
-                                    }, res -> {
-                                        if(res.succeeded()){
-                                            System.out.println("Login achieved\n");
-                                            InfoObject ret = new InfoObject();
-                                            ret.vals = new String[]{incoming.vals[0],incoming.vals[1]};
-                                            ret.action = new String("login_accepted");
+                                    if(!incoming.vals[0].matches("^[a-zA-Z0-9]*$")||!incoming.vals[1].matches("^[a-zA-Z0-9]*$")){
+                                        InfoObject inf = new InfoObject();
+                                        inf.action = "SNACKBAR";
+                                        inf.vals = new String[]{"Must use 1-9 a-z"};
+                                        netSocket.write(Json.encode(inf) + "\n");
+                                    }else {
+                                        vertx.executeBlocking(future -> {
+                                            // Call some blocking API that takes a significant amount of time to return
+                                            Login(vertx, incoming.vals[0], incoming.vals[1], incoming.appName, future);
+                                            //future.complete("BLAH");
+                                        }, res -> {
+                                            if (res.succeeded()) {
+                                                System.out.println("Login achieved\n");
+                                                InfoObject ret = new InfoObject();
+                                                ret.vals = new String[]{incoming.vals[0], incoming.vals[1]};
+                                                ret.action = new String("login_accepted");
 
-                                            netSocket.write(Json.encode(ret ) + "\n");
-                                        }else{
-                                            System.out.println("Login Failed");
-                                            InfoObject ret = new InfoObject();
-                                            ret.vals = new String[]{incoming.vals[0],incoming.vals[1]};
-                                            ret.action = new String("login_denied");
+                                                netSocket.write(Json.encode(ret) + "\n");
+                                            } else {
+                                                System.out.println("Login Failed");
+                                                InfoObject ret = new InfoObject();
+                                                ret.vals = new String[]{incoming.vals[0], incoming.vals[1]};
+                                                ret.action = new String("login_denied");
 
-                                            netSocket.write(Json.encode(ret) + "\n");
+                                                netSocket.write(Json.encode(ret) + "\n");
 
-                                        }
-                                    });
+                                            }
+                                        });
+                                    }
                                     break;
                                 case "INVITES?":
+                                    if(!incoming.vals[0].matches("^[a-zA-Z0-9]*$"))
+                                        break;
+
                                     String requestedUser = incoming.vals[0];
                                     //System.out.println("Checking for invites for " + requestedUser);
                                     vertx.executeBlocking(future -> {
@@ -402,26 +418,33 @@ public class AccountVerticle extends AbstractVerticle {
                                     });
                                     break;
                                 case "INVITE_USER":
-                                    //thread safe
-                                    int id = gameID++;
-                                    String invitedUser = incoming.vals[0];
-                                    String invitingUser = incoming.vals[1];
-                                    vertx.executeBlocking(future -> {
-                                        InviteUser(vertx, invitedUser, id+"", future,invitingUser);
-                                    }, res -> {
-                                        if (res.succeeded()) {
-                                            InfoObject inf = new InfoObject();
-                                            inf.action="SNACKBAR";
-                                            inf.vals = new String[]{"Invite sent!"};
-                                            netSocket.write(Json.encode(inf) + "\n");
-                                        } else {
-                                            InfoObject inf = new InfoObject();
-                                            inf.intVals=new int[]{id};
-                                            inf.action="SNACKBAR";
-                                            inf.vals = new String[]{res.cause().getMessage()};
-                                            netSocket.write(Json.encode(inf) + "\n");
-                                        }
-                                    });
+                                    if(!incoming.vals[0].matches("^[a-zA-Z0-9]*$")||!incoming.vals[1].matches("^[a-zA-Z0-9]*$")){
+                                        InfoObject inf = new InfoObject();
+                                        inf.action = "SNACKBAR";
+                                        inf.vals = new String[]{"Must use 1-9 a-z"};
+                                        netSocket.write(Json.encode(inf) + "\n");
+                                    }else {
+                                        //thread safe
+                                        int id = gameID++;
+                                        String invitedUser = incoming.vals[0];
+                                        String invitingUser = incoming.vals[1];
+                                        vertx.executeBlocking(future -> {
+                                            InviteUser(vertx, invitedUser, id + "", future, invitingUser);
+                                        }, res -> {
+                                            if (res.succeeded()) {
+                                                InfoObject inf = new InfoObject();
+                                                inf.action = "SNACKBAR";
+                                                inf.vals = new String[]{"Invite sent!"};
+                                                netSocket.write(Json.encode(inf) + "\n");
+                                            } else {
+                                                InfoObject inf = new InfoObject();
+                                                inf.intVals = new int[]{id};
+                                                inf.action = "SNACKBAR";
+                                                inf.vals = new String[]{res.cause().getMessage()};
+                                                netSocket.write(Json.encode(inf) + "\n");
+                                            }
+                                        });
+                                    }
 
                                     break;
 
@@ -457,12 +480,11 @@ public class AccountVerticle extends AbstractVerticle {
         server.listen(InitServer.TCPPort);
     }
 
-
     public static void createGameIfNotExists(Vertx vertx, Future future, String gameNumber){
         System.out.println("Create? game " + gameNumber + " requested...");
         if(!gameHashMap.containsKey(gameNumber)) {
             System.out.println(gameNumber + " didn't exist, creating...");
-            gameHashMap.put(gameNumber, new PongGame(gameNumber));
+            gameHashMap.put(gameNumber, new PongGame(vertx,gameNumber));
         }
         future.complete();
     }
