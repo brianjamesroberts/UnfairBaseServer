@@ -173,9 +173,11 @@ public class AccountVerticle extends AbstractVerticle {
                 try{
                 connection.query(query, res2 -> {
                     if (res2.succeeded()) {
+                        future.complete();
                         System.out.println("succeeded in validating game " + res2.result().toString());
 
                     } else {
+                        future.fail("FAILLLL89283");
                         System.out.println("Failed to validate game " + res2.cause().toString());
                     }
                 });

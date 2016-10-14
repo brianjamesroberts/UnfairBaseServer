@@ -11,6 +11,16 @@ import io.vertx.ext.web.RoutingContext;
 public class RESTService {
 
 
+    //done
+    // invites?
+    // login
+    // invite a user
+    // New account
+
+    //// TODO: 10/13/16
+    // validate invite
+
+
     Vertx vertx;
 
     public RESTService(Vertx vert){
@@ -18,6 +28,101 @@ public class RESTService {
         init();
     }
 
+    public void validateInvite(RoutingContext routingContext){
+        String gameNum = routingContext.request().getHeader("game-number");
+        vertx.executeBlocking(future -> {
+            AccountVerticle.ValidateGame(vertx,gameNum,future);
+            },res-> {
+
+                if (res.succeeded()) {
+                    System.out.println("Future success validategame");
+                    vertx.executeBlocking(future2->{
+                        AccountVerticle.createGameIfNotExists(vertx, future2, gameNum);
+                    },res2 -> {
+                        if(res2.succeeded()) {
+                            System.out.println("Created game  #" + gameNum);
+                        }else {
+                            System.out.println("Failed to createGameIfNotExists #" + gameNum);
+                        }
+                    });
+
+
+                } else {
+                    System.out.println("Future fail validategame");
+
+                }
+            routingContext.response().end(Json.encodePrettily(new InfoObject()));
+            });
+    }
+
+    public void newAccount(RoutingContext routingContext){
+
+        String user = routingContext.request().getHeader("username");
+        String pass = routingContext.request().getHeader("password");
+
+        if(!user.matches("^[a-zA-Z0-9]*$")||!pass.matches("^[a-zA-Z0-9]*$")) {
+            InfoObject inf = new InfoObject();
+            inf.action = "SNACKBAR";
+            inf.vals = new String[]{"Must use 1-9 a-z"};
+            routingContext.response().end(Json.encodePrettily(inf));
+        }else if(user.length() <3 || pass.length()<3){
+            InfoObject inf = new InfoObject();
+            inf.action = "SNACKBAR";
+            inf.vals = new String[]{"username, password must be 3+ characters"};
+            routingContext.response().end(Json.encodePrettily(inf));
+        }else {
+            vertx.executeBlocking(future -> {
+                AccountVerticle.createNewAccount(vertx, future, user, pass);
+            }, res -> {
+                if (res.succeeded()) {
+                    InfoObject inf = new InfoObject();
+                    inf.action = "SNACKBAR";
+                    inf.vals = new String[]{"Account created! :)"};
+                    routingContext.response().end(Json.encodePrettily(inf));
+                } else {
+                    InfoObject inf = new InfoObject();
+                    inf.action = "SNACKBAR";
+                    inf.vals = new String[]{"Failed, username taken :("};
+                    routingContext.response().end(Json.encodePrettily(inf));
+                }
+            });
+        }
+
+    }
+
+    public void inviteUser(RoutingContext routingContext){
+
+        String invitedUser = routingContext.request().getHeader("invited-user");
+        String invitingUser = routingContext.request().getHeader("inviting-user");
+
+        if(!invitedUser.matches("^[a-zA-Z0-9]*$")||!invitingUser.matches("^[a-zA-Z0-9]*$")){
+            InfoObject inf = new InfoObject();
+            inf.action = "SNACKBAR";
+            inf.vals = new String[]{"Must use 1-9 a-z"};
+            routingContext.response().end(Json.encodePrettily(inf));
+        }else {
+            //thread safe
+            int id = AccountVerticle.gameID++;
+            vertx.executeBlocking(future -> {
+                AccountVerticle.InviteUser(vertx, invitedUser, id + "", future, invitingUser);
+            }, res -> {
+                if (res.succeeded()) {
+                    InfoObject inf = new InfoObject();
+                    inf.action = "SNACKBAR";
+                    inf.vals = new String[]{"Invite sent!"};
+                    routingContext.response().end(Json.encodePrettily(inf));
+                } else {
+                    InfoObject inf = new InfoObject();
+                    inf.intVals = new int[]{id};
+                    inf.action = "SNACKBAR";
+                    inf.vals = new String[]{res.cause().getMessage()};
+                    routingContext.response().end(Json.encodePrettily(inf));
+                }
+            });
+        }
+
+
+    }
 
     public void getInvites(RoutingContext routingContext){
         String user = routingContext.request().getHeader("username");
@@ -86,6 +191,9 @@ public class RESTService {
 
         router.post("/pongonline/api/login").handler(this::getLogin);
         router.post("/pongonline/api/invites").handler(this::getInvites);
+        router.post("/pongonline/api/invite_user").handler(this::inviteUser);
+        router.post("/pongonline/api/new_account").handler(this::newAccount);
+        router.post("/pongonline/api/validate_invite").handler(this::validateInvite);
         vertx
                 .createHttpServer()
                 .requestHandler(router::accept)

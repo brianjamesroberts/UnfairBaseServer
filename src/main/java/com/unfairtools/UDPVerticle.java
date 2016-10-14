@@ -57,8 +57,10 @@ public class UDPVerticle extends AbstractVerticle {
 
             InfoObject inf = new InfoObject();
             inf.action = "halt";
+            //theres no winner or loser, tell the android to ignore, dont display any info, this is an error
+            inf.vals = new String[]{"ignore"};
 
-            sock.send(Buffer.buffer("halt".getBytes()), packet.sender().port(), packet.sender().host(), asyncResult2 -> {
+            sock.send(Buffer.buffer(Json.encode(inf).getBytes()), packet.sender().port(), packet.sender().host(), asyncResult2 -> {
             });
             deleteInvite(vertx,incoming.vals[1]);
             future.fail("Game not found1");
