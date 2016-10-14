@@ -3,6 +3,12 @@ package com.unfairtools;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import io.vertx.core.json.Json;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.Router;
+import io.vertx.ext.web.RoutingContext;
+
 
 /**
  * Created by brianroberts on 9/13/16.
@@ -16,12 +22,22 @@ public class InitServer {
     public static String ServerIP = "158.69.207.153";
     public static int UDPPort = 8086;
     public static int TCPPort = 8079;
+    public static int RestfulPort = 8075;
+
+
+
 
 
     public InitServer(){
 
         Vertx vertx;
         vertx = Vertx.vertx();
+
+
+        RESTService rest = new RESTService(vertx);
+
+
+
         Handler<AsyncResult<String>> handler = new Handler<AsyncResult<String>>() {
             @Override
             public void handle(AsyncResult<String> event) {

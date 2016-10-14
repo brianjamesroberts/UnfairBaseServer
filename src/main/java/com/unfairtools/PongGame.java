@@ -8,7 +8,7 @@ import io.vertx.core.json.Json;
 /**
  * Created by brianroberts on 9/15/16.
  */
-public class PongGame {
+ public class PongGame {
 
     public String user1 = "1";
     public String user2 = "2";
@@ -81,14 +81,33 @@ public class PongGame {
                 float time = 0;
                 int step = 0;
                 started = true;
+
+                double t2 = 0.0d;
+                double t1 = 0.0d;
+
                 while (winner == null) {
+
+
                     //System.out.println("Game running...");
                     //step++;
+
                     try {
-                        Thread.sleep(50);
+                        t1 = System.currentTimeMillis();
+                        Thread.sleep(35);
+                        t2 = System.currentTimeMillis();
+                        t1 = (t2 - t1) / 50.0f;
+                        //System.out.println("t1 = " + t1);
+                    }catch(Exception e){
+                        e.printStackTrace();
+                    }
+                    try {
+
+
+
+
+
+
                         if(s1!=null && s2!= null){
-
-
                             String s1String = Json.encode(getGameInfo(1));
                             String s2String = Json.encode(getGameInfo(2));
                            s1.send(Buffer.buffer(s1String.getBytes()), s1Port, s1Host, asyncResult2 -> {
@@ -113,8 +132,8 @@ public class PongGame {
                         }
                     } catch (Exception e) {
                     }
-                    ballPosX += ballXV * 1;
-                    ballPosY += ballYV * 1;
+                    ballPosX += ballXV * t1;
+                    ballPosY += ballYV * t1;
 
 
                     //System.out.println("BALL POS:" + ballPosX + ", " + ballPosY);
@@ -191,7 +210,9 @@ public class PongGame {
         public RemoveRunnable(String idd){
             id = idd;
         }
-        private RemoveRunnable(){
+
+        public RemoveRunnable() throws IllegalAccessException{
+            throw new IllegalAccessException("You need to call the constructor with (int) as the sole paramater");
         }
         public void run(){
             try{

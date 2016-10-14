@@ -343,10 +343,15 @@ public class AccountVerticle extends AbstractVerticle {
                             //System.out.println("Action was " + incoming.action);
                             switch(incoming.action){
                                 case "NEW_ACCOUNT":
-                                    if(!incoming.vals[0].matches("^[a-zA-Z0-9]*$")||!incoming.vals[1].matches("^[a-zA-Z0-9]*$")){
+                                    if(!incoming.vals[0].matches("^[a-zA-Z0-9]*$")||!incoming.vals[1].matches("^[a-zA-Z0-9]*$")) {
                                         InfoObject inf = new InfoObject();
                                         inf.action = "SNACKBAR";
                                         inf.vals = new String[]{"Must use 1-9 a-z"};
+                                        netSocket.write(Json.encode(inf) + "\n");
+                                    }else if(incoming.vals[0].length() <3 || incoming.vals[1].length()<3){
+                                        InfoObject inf = new InfoObject();
+                                        inf.action = "SNACKBAR";
+                                        inf.vals = new String[]{"username, password must be 3+ characters"};
                                         netSocket.write(Json.encode(inf) + "\n");
                                     }else {
 
